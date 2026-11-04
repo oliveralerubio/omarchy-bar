@@ -3,8 +3,9 @@
 // encendida; cuando no hay nada corriendo, bosteza y se acuesta a dormir en la vagoneta (con zzz).
 //
 // Detección: cada pollSeconds consulta (solo lectura) la base de T3 Code
-// ($HOME/.t3/userdata/statev2.sqlite) y cuenta los hilos con ejecución "running" que no están
-// archivados ni borrados y cuyo updated_at es reciente (descarta ejecuciones zombi tras un crash).
+// ($HOME/.t3/userdata/statev2.sqlite) y cuenta los hilos distintos con ejecución en
+// preparing/starting/running/waiting que no están archivados ni borrados y cuyo updated_at es
+// reciente (descarta ejecuciones zombi tras un crash). El tooltip lista el título de cada hilo.
 // Si falta sqlite3 o la base, cuenta 0: el módulo se dibuja igual, durmiendo.
 // Click = repetir la consulta ahora mismo.
 //
@@ -43,7 +44,8 @@ Item {
   readonly property int staleMinutes: Math.floor(num("staleMinutes", 20, 1, 1440))
 
   // ---------------------------------------------------------------- estado
-  property int activeCount: 0          // hilos running ahora (lo escribe el poll)
+  property int activeCount: 0          // hilos activos ahora (lo escribe el poll)
+  property var activeTitles: []        // títulos de esos hilos, del más reciente al más antiguo
   property double lastActiveMs: 0      // último instante con hilos corriendo (0 = nunca)
   property string mood: "sleeping"     // "working" | "sleeping" (lo decide decideState)
   property string lastMood: "sleeping"
@@ -78,16 +80,20 @@ Item {
   }
 
   // ---------------------------------------------------------------- consulta a T3 Code
-  // Solo lectura (mode=ro). Cualquier fallo (sin sqlite3, sin base, error SQL) imprime 0.
+  // Solo lectura (mode=ro). Imprime una línea por hilo activo (su título). Cualquier fallo
+  // (sin sqlite3, sin base, error SQL) no imprime nada = 0 hilos.
+  // El SQL va dentro de comillas dobles del sh: solo usa comillas simples, sin $ ni ` ni \ ni ".
   function probeCommand() {
-    var sql = "SELECT COUNT(*) FROM orchestration_v2_projection_runs r " +
+    var sql = "SELECT DISTINCT t.title FROM orchestration_v2_projection_runs r " +
               "JOIN orchestration_v2_projection_threads t USING(thread_id) " +
-              "WHERE r.status='running' AND t.archived_at IS NULL AND t.deleted_at IS NULL " +
-              "AND julianday(t.updated_at) > julianday('now','-" + staleMinutes + " minutes');"
+              "WHERE r.status IN ('preparing','starting','running','waiting') " +
+              "AND t.archived_at IS NULL AND t.deleted_at IS NULL " +
+              "AND julianday(t.updated_at) > julianday('now','-" + staleMinutes + " minutes') " +
+              "ORDER BY t.updated_at DESC;"
     return "db=\"$HOME/.t3/userdata/statev2.sqlite\"; " +
-           "command -v sqlite3 >/dev/null 2>&1 || { echo 0; exit 0; }; " +
-           "[ -f \"$db\" ] || { echo 0; exit 0; }; " +
-           "sqlite3 \"file:$db?mode=ro\" \"" + sql + "\" 2>/dev/null || echo 0"
+           "command -v sqlite3 >/dev/null 2>&1 || exit 0; " +
+           "[ -f \"$db\" ] || exit 0; " +
+           "sqlite3 \"file:$db?mode=ro\" \"" + sql + "\" 2>/dev/null || true"
   }
 
   function poll() {
@@ -102,8 +108,12 @@ Item {
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
-        var n = parseInt(String(text || "").trim().split("\n")[0], 10)
-        root.applyCount(isFinite(n) && n > 0 ? n : 0)
+        // una línea por hilo: se recortan y se descartan las vacías
+        var titles = String(text || "").split("\n")
+          .map(function(s) { return s.trim() })
+          .filter(function(s) { return s.length > 0 })
+        root.activeTitles = titles
+        root.applyCount(titles.length)
       }
     }
   }
@@ -124,8 +134,19 @@ Item {
   readonly property bool tooltipHovered: visible && hover.hovered
   function tooltipText() {
     if (mood === "working") {
-      if (activeCount > 0)
-        return "Minando · " + activeCount + (activeCount === 1 ? " hilo" : " hilos") + " en T3 Code"
+      if (activeCount > 0) {
+        var head = "Minando · " + activeCount + (activeCount === 1 ? " hilo" : " hilos") + " en T3 Code"
+        var maxShown = 6
+        var maxLen = 48
+        var lines = [head]
+        for (var i = 0; i < activeTitles.length && i < maxShown; i++) {
+          var t = String(activeTitles[i])
+          if (t.length > maxLen) t = t.substring(0, maxLen - 1) + "…"
+          lines.push("• " + t)
+        }
+        if (activeTitles.length > maxShown) lines.push("+" + (activeTitles.length - maxShown) + " más")
+        return lines.join("\n")
+      }
       return "Minando · T3 Code acaba de terminar"
     }
     return "Durmiendo · T3 Code sin trabajo"
@@ -137,6 +158,7 @@ Item {
   }
   onTooltipHoveredChanged: refreshTooltip()
   onActiveCountChanged: if (tooltipHovered) refreshTooltip()
+  onActiveTitlesChanged: if (tooltipHovered) refreshTooltip()
 
   readonly property var win: QsWindow.window
   readonly property bool shown: visible && (!win || win.visible !== false)
