@@ -7,6 +7,12 @@
 ## Showcase
 
 <p align="center">
+  <img src="./assets/demo.gif" alt="omarchy-bar demo" width="100%" />
+</p>
+
+<p align="center"><a href="https://github.com/oliveralerubio/omarchy-bar/releases/latest">▶️ Watch the full 44s demo video (with sound)</a></p>
+
+<p align="center">
   <img src="./assets/miner-zoom.png" alt="Pixel Miner Zoom" width="48%" />
   <img src="./assets/bar.png" alt="Omarchy Bar Overview" width="48%" />
 </p>
