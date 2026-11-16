@@ -10,8 +10,12 @@
 // Ajustes en shell.json: "pixel": 2, "speed": 1, "density": 1
 // Quitar: borra { "id": "starfield", "type": "qml" } de ~/.config/omarchy/shell.json
 // Nota: bar/modules no se recarga en caliente -> `omarchy restart shell`.
+//
+// Temas CLAROS: este módulo se apaga solo (mode = "light" en colors.toml) y lo
+// sustituye el cielo de día de daysky.qml. En temas oscuros todo sigue igual.
 import QtQuick
 import Quickshell
+import Quickshell.Io
 
 Item {
   id: root
@@ -28,7 +32,50 @@ Item {
   readonly property real speed: num("speed", 1, 0, 5)
   readonly property real density: num("density", 1, 0.2, 3)
 
-  visible: !(bar && bar.vertical)
+  // ---- modo del tema (misma regla que daysky.qml y omarchy-theme-color)
+  readonly property string home: Quickshell.env("HOME")
+  property bool lightMode: false
+  function parseLight(raw) {
+    var mode = "", type = "", bg = ""
+    var lines = String(raw || "").split("\n")
+    for (var i = 0; i < lines.length; i++) {
+      var m = lines[i].match(/^\s*([A-Za-z0-9_-]+)\s*=\s*["']?([^"'#\s]*)/)
+      if (!m) continue
+      if (m[1] === "mode") mode = m[2]
+      else if (m[1] === "theme_type") type = m[2]
+      else if (m[1] === "background") bg = m[2]
+    }
+    var v = mode || type
+    if (v) return v === "light"
+    if (/^#[0-9A-Fa-f]{6}$/.test(bg))
+      return parseInt(bg.substr(1, 2), 16) + parseInt(bg.substr(3, 2), 16) + parseInt(bg.substr(5, 2), 16) > 382
+    return false
+  }
+  FileView {
+    id: colorsFile
+    path: root.home + "/.local/state/omarchy/current/theme/colors.toml"
+    blockLoading: true
+    printErrors: false
+    onLoaded: root.lightMode = root.parseLight(text())
+    onLoadFailed: root.lightMode = false
+  }
+  // `omarchy theme set` escribe theme.name DESPUÉS de dejar colors.toml listo.
+  FileView {
+    id: themeNameFile
+    path: root.home + "/.local/state/omarchy/current/theme.name"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: { themeNameFile.reload(); colorsFile.reload() }
+  }
+  // Red de seguridad por si se pierde un evento de inotify.
+  Timer {
+    interval: 3000
+    repeat: true
+    running: true
+    onTriggered: colorsFile.reload()
+  }
+
+  visible: !(bar && bar.vertical) && !lightMode
   implicitWidth: 0
   implicitHeight: 0
 
