@@ -273,6 +273,14 @@ Item {
   readonly property var zSmall: ["ZZZ", ".Z.", "ZZZ"]
   readonly property var zBig: ["ZZZ", "..Z", ".Z.", "ZZZ"]
 
+  // Barra clara (texto oscuro, tema de día): la roca negra parecería un agujero sobre el
+  // cielo y las zzz claras desaparecen. Solo cambia la paleta; en oscuro todo igual que siempre.
+  readonly property bool lightBar: {
+    if (!bar || !bar.foreground) return false
+    var c = Qt.color(bar.foreground)
+    return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b < 0.45
+  }
+
   // borde izquierdo de la roca por fila (y = 0..11)
   readonly property var rockEdge: [37, 36, 35, 35, 34, 34, 34, 34, 35, 36, 36, 36]
 
@@ -308,7 +316,9 @@ Item {
       var e = rockEdge[y]
       for (var x = e; x < cols; x++) {
         var h = rnd(x * 13 + y * 7)
-        var c = x === e ? "#1f1c28" : (h < 0.15 ? "#4a4358" : (h < 0.55 ? "#3a3445" : "#2c2836"))
+        var c = lightBar
+          ? (x === e ? "#5b5468" : (h < 0.15 ? "#b9b3c6" : (h < 0.55 ? "#a59fb4" : "#968fa6")))
+          : (x === e ? "#1f1c28" : (h < 0.15 ? "#4a4358" : (h < 0.55 ? "#3a3445" : "#2c2836")))
         dot(ctx, x, y, c)
       }
     }
@@ -386,7 +396,9 @@ Item {
   // zzz que suben en pasos de píxel; el color se apaga por escalones, sin degradados
   function drawZ(ctx, now) {
     var period = 4500
-    var shades = ["#5d6a99", "#8fa2e6", "#cfe0ff", "#cfe0ff", "#8fa2e6", "#5d6a99"]
+    var shades = lightBar
+      ? ["#8aa0c0", "#3e5f86", "#1f3f5e", "#1f3f5e", "#3e5f86", "#8aa0c0"]
+      : ["#5d6a99", "#8fa2e6", "#cfe0ff", "#cfe0ff", "#8fa2e6", "#5d6a99"]
     var ys = [4, 3, 2, 1, 0, 0]
     for (var i = 0; i < 3; i++) {
       var p = ((now + i * 1500) % period) / period

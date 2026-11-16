@@ -23,6 +23,7 @@
 
 - ⛏️ **Pixel Miner (`miner.qml`)**: Real-time T3 Code reactive status module. Swings pickaxe with sparkling crystal vein when AI coding threads are active; stretches/yawns and sleeps peacefully in his minecart with `zzz` when all threads complete. Lists active thread titles on hover! Click anytime to force an instant re-poll.
 - 🌌 **Starfield (`starfield.qml`)**: Multi-layered parallax pixel stars across the entire bar background with occasional shooting stars. Driven by the wall clock for perfect sync across multi-monitor setups without jumping on shell restarts.
+- ☀️ **Day Sky (`daysky.qml`)**: Light-theme sibling of the starfield. Banded pixel sky with 3 parallax cloud layers, a sun that crosses the bar following the real local time, a golden tint around sunrise and sunset, and occasional bird flocks or a hot-air balloon. It only shows when the active Omarchy theme is light (`mode = "light"` in the theme's `colors.toml`); the starfield hides itself on light themes, so the two swap automatically on theme change.
 - 🎮 **Pixel Scenes (`pixelscenes.qml`)**: Rotating classic pixel art scenes (Kirby inhaling stars, Link vs Octorok, catching Pikachu). Clock-synchronized scene rotation with manual advance on click.
 
 ---
@@ -93,6 +94,17 @@ Options are configured in your `~/.config/omarchy/shell.json` inside each module
 | `speed` | `1` | Parallax drift speed multiplier. |
 | `density` | `1` | Star density multiplier. |
 
+### Day Sky (`daysky.qml`)
+
+| Setting | Default | Description |
+| :--- | :---: | :--- |
+| `pixel` | `2` | Art pixel size. |
+| `speed` | `1` | Cloud drift speed multiplier. |
+| `density` | `1` | Cloud density multiplier. |
+| `sunrise` | `6.5` | Local sunrise hour (decimal). |
+| `sunset` | `18.5` | Local sunset hour (decimal). |
+| `hour` | `-1` | Testing only: pin the time of day (`14.5` = 14:30); `-1` uses the real clock. |
+
 ---
 
 ## 🇪🇸 Resumen en español
@@ -102,6 +114,7 @@ Options are configured in your `~/.config/omarchy/shell.json` inside each module
 ### Lo más destacado:
 - **Minero reactivo a T3 Code (`miner.qml`)**: Trabaja incansablemente picando cristales cuando tus agentes de IA tienen tareas en ejecución (`preparing`, `starting`, `running`, `waiting`). Al terminar todo el trabajo, bosteza y se echa a dormir plácidamente en su vagoneta con su animación de *zzz*. Si pasas el cursor por encima, el tooltip te muestra los títulos de las tareas activas.
 - **Cielo estrellado (`starfield.qml`)**: Fondo nocturno con estrellas pixeladas en 3 capas de paralaje y estrellas fugaces esporádicas a lo largo de toda la barra.
+- **Cielo de día (`daysky.qml`)**: La versión para temas claros: cielo pixelado en bandas, nubes en 3 capas, un sol que cruza la barra con la hora real, tonos dorados al amanecer y al atardecer, y de vez en cuando pájaros o un globo. Se alterna solo con el cielo estrellado al cambiar entre tema claro y oscuro.
 - **Escenas clásicas (`pixelscenes.qml`)**: Mini escenas nostálgicas (Kirby, Link y Pikachu) que rotan automáticamente por reloj de pared o con un clic.
 
 ### Sin demonios ni claves API:
