@@ -42,6 +42,9 @@ Item {
   }
   readonly property int pollMs: Math.round(num("pollSeconds", 4, 1, 300) * 1000)
   readonly property int staleMinutes: Math.floor(num("staleMinutes", 20, 1, 1440))
+  readonly property string clickCommand: settings && typeof settings.clickCommand === "string"
+    ? settings.clickCommand.trim()
+    : "omarchy-launch-or-focus com.t3tools.T3Code \"uwsm-app -- t3code\""
 
   // ---------------------------------------------------------------- estado
   property int activeCount: 0          // hilos activos ahora (lo escribe el poll)
@@ -130,7 +133,11 @@ Item {
   // contrato del bar: triggerPress -> click + cursor de mano; tooltipHovered -> tooltip
   property bool pressable: true
   property bool interactive: true
-  function triggerPress(button) { poll() }
+  // Clic: re-consulta y abre/enfoca T3 Code (clickCommand vacío = solo re-consultar)
+  function triggerPress(button) {
+    poll()
+    if (clickCommand !== "" && bar && typeof bar.run === "function") bar.run(clickCommand)
+  }
   readonly property bool tooltipHovered: visible && hover.hovered
   function tooltipText() {
     if (mood === "working") {
