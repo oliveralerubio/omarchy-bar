@@ -94,6 +94,7 @@ Options are configured in your `~/.config/omarchy/shell.json` inside each module
 | `pixel` | `2` | Star pixel size. |
 | `speed` | `1` | Parallax drift speed multiplier. |
 | `density` | `1` | Star density multiplier. |
+| `fps` | auto | Sky frames per second: 10, rising with `speed` up to 20 at `speed: 5`, and 20 while the shooting star crosses. Set `20` for the previous cadence. |
 
 ### Day Sky (`daysky.qml`)
 

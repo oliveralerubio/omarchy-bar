@@ -458,6 +458,32 @@ Item {
     else pokemonScene(ctx, t)
   }
 
+  // Clave del fotograma: ejecuta el mismo dibujo contra un registrador (sin pintar) y devuelve el
+  // texto de lo que se pintaría. Si es igual al del último fotograma pintado, no se repinta:
+  // casi todos los ticks de 100 ms caen dentro del mismo paso de animación.
+  property string lastKey: ""
+  property double lastPaintMs: 0
+  function frameKey(draw) {
+    var parts = []
+    var r = {
+      fillStyle: "", globalAlpha: 1,
+      reset: function() {}, clearRect: function() {},
+      fillRect: function(x, y, w, h) { parts.push(r.fillStyle + "," + r.globalAlpha + "," + x + "," + y + "," + w + "," + h) }
+    }
+    draw(r)
+    return parts.join(";")
+  }
+  // Repinta solo si cambió el contenido (o cada 5 s por si el lienzo se perdiera).
+  function paintIfChanged() {
+    var k = frameKey(paintScene)
+    var now = Date.now()
+    if (k === lastKey && now - lastPaintMs < 5000) return
+    lastKey = k
+    lastPaintMs = now
+    canvas.requestPaint()
+  }
+  onShownChanged: lastKey = ""
+
   // ---------------------------------------------------------------- runtime
   HoverHandler { id: hover }
 
@@ -472,12 +498,25 @@ Item {
     onPaint: root.paintScene(getContext("2d"))
   }
 
+  // Todos los módulos de la barra alinean su reloj a múltiplos del periodo en el reloj de pared:
+  // así sus fotogramas caen en el mismo ciclo de dibujo y la ventana (y el desenfoque de
+  // Hyprland) se actualiza una vez en vez de una por módulo.
+  function alignedMs(ms) {
+    var r = ms - Date.now() % ms
+    return r < ms * 0.2 ? r + ms : r
+  }
+
   // 20 fps; se pausa si el widget o su ventana no se muestran
   Timer {
     interval: 50
     running: root.shown
     repeat: true
-    onTriggered: { root.checkScene(); canvas.requestPaint() }
+    onRunningChanged: if (running) interval = root.alignedMs(50)
+    onTriggered: {
+      interval = root.alignedMs(50)
+      root.checkScene()
+      root.paintIfChanged()
+    }
   }
 
   SequentialAnimation {

@@ -7,7 +7,10 @@
 // iconos a lo ancho de toda la pantalla.
 // La posición sale del reloj de pared: no salta al reiniciar el shell y va igual
 // en todos los monitores.
-// Ajustes en shell.json: "pixel": 2, "speed": 1, "density": 1
+// Ajustes en shell.json: "pixel": 2, "speed": 1, "density": 1, "fps": 10
+// ("fps": cuadros por segundo del cielo; por defecto 10, o más con "speed" alto (20 con speed 5),
+//  y 20 mientras cruza la estrella fugaz.
+//  Las estrellas avanzan 1-6 px/s, así que a 10 fps no se nota y se pinta la mitad; "fps": 20 = como antes)
 // Quitar: borra { "id": "starfield", "type": "qml" } de ~/.config/omarchy/shell.json
 // Nota: bar/modules no se recarga en caliente -> `omarchy restart shell`.
 //
@@ -31,6 +34,10 @@ Item {
   readonly property int px: Math.round(num("pixel", 2, 1, 4))
   readonly property real speed: num("speed", 1, 0, 5)
   readonly property real density: num("density", 1, 0.2, 3)
+  // Por defecto, lo justo para que la capa más rápida (3.2 px-arte/s × speed) no avance más de
+  // ~1 px-arte por cuadro: 10 fps con speed ≤ 2.5 y hasta 20 (como antes) con speed 5.
+  readonly property int autoFps: Math.min(20, Math.max(10, Math.ceil(3.2 * speed * 1.25)))
+  readonly property int fps: Math.round(num("fps", autoFps, 5, 30))
 
   // ---- modo del tema (misma regla que daysky.qml y omarchy-theme-color)
   readonly property string home: Quickshell.env("HOME")
@@ -192,11 +199,29 @@ Item {
     }
   }
 
-  // 50 ms = 20 fps; los periodos de parpadeo son múltiplos de 0.5 s
+  // Los pasos de las estrellas son de 1 px-arte a 0.6-3.2 px/s y los periodos de parpadeo
+  // múltiplos de 0.5 s, así que basta `fps` cuadros por segundo (10 = 100 ms). Mientras cruza la
+  // estrella fugaz (1.2 s cada 23 s) se sube a 20 fps para que su estela siga igual de fluida.
+  function nextTickMs() {
+    var t = Date.now() / 1000
+    var fast = speed > 0 && ((t % 23) < 1.2 || (t % 23) > 22.85)
+    return fast ? 50 : Math.round(1000 / fps)
+  }
+  // Todos los módulos de la barra alinean su reloj a múltiplos del periodo en el reloj de pared:
+  // así sus fotogramas caen en el mismo ciclo de dibujo y la ventana (y el desenfoque de
+  // Hyprland) se actualiza una vez en vez de una por módulo.
+  function alignedMs(ms) {
+    var r = ms - Date.now() % ms
+    return r < ms * 0.2 ? r + ms : r
+  }
   Timer {
-    interval: 50
+    interval: 100
     repeat: true
     running: sky.visible && root.win && root.win.visible !== false
-    onTriggered: sky.requestPaint()
+    onRunningChanged: if (running) interval = root.alignedMs(root.nextTickMs())
+    onTriggered: {
+      interval = root.alignedMs(root.nextTickMs())
+      sky.requestPaint()
+    }
   }
 }

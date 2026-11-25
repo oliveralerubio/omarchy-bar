@@ -424,6 +424,14 @@ Item {
     }
   }
 
+  // Todos los módulos de la barra alinean su reloj a múltiplos del periodo en el reloj de pared:
+  // así sus fotogramas caen en el mismo ciclo de dibujo y la ventana (y el desenfoque de
+  // Hyprland) se actualiza una vez en vez de una por módulo.
+  function alignedMs(ms) {
+    var r = ms - Date.now() % ms
+    return r < ms * 0.2 ? r + ms : r
+  }
+
   // 100 ms = 10 fps: las nubes avanzan en pasos de 1 píxel, el sol y las aves usan fotogramas lentos.
   // El cielo (estático) solo se repinta si cambia el tamaño o el tinte de la hora.
   property string skyKey: ""
@@ -431,7 +439,9 @@ Item {
     interval: 100
     repeat: true
     running: scene.visible && root.win && root.win.visible !== false
+    onRunningChanged: if (running) interval = root.alignedMs(100)
     onTriggered: {
+      interval = root.alignedMs(100)
       var w = root.tint(root.hourNow())
       var key = skyBg.width + "x" + skyBg.height + ":" + w.wm + ":" + w.dk + ":" + root.px
       if (key !== root.skyKey) { root.skyKey = key; skyBg.requestPaint() }
