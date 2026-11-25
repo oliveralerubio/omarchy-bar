@@ -8,7 +8,8 @@
 // La posición sale del reloj de pared: no salta al reiniciar el shell y va igual
 // en todos los monitores.
 // Ajustes en shell.json: "pixel": 2, "speed": 1, "density": 1, "fps": 10
-// ("fps": cuadros por segundo del cielo; 10 por defecto y 20 mientras cruza la estrella fugaz.
+// ("fps": cuadros por segundo del cielo; por defecto 10, o más con "speed" alto (20 con speed 5),
+//  y 20 mientras cruza la estrella fugaz.
 //  Las estrellas avanzan 1-6 px/s, así que a 10 fps no se nota y se pinta la mitad; "fps": 20 = como antes)
 // Quitar: borra { "id": "starfield", "type": "qml" } de ~/.config/omarchy/shell.json
 // Nota: bar/modules no se recarga en caliente -> `omarchy restart shell`.
@@ -33,7 +34,10 @@ Item {
   readonly property int px: Math.round(num("pixel", 2, 1, 4))
   readonly property real speed: num("speed", 1, 0, 5)
   readonly property real density: num("density", 1, 0.2, 3)
-  readonly property int fps: Math.round(num("fps", 10, 5, 30))
+  // Por defecto, lo justo para que la capa más rápida (3.2 px-arte/s × speed) no avance más de
+  // ~1 px-arte por cuadro: 10 fps con speed ≤ 2.5 y hasta 20 (como antes) con speed 5.
+  readonly property int autoFps: Math.min(20, Math.max(10, Math.ceil(3.2 * speed * 1.25)))
+  readonly property int fps: Math.round(num("fps", autoFps, 5, 30))
 
   // ---- modo del tema (misma regla que daysky.qml y omarchy-theme-color)
   readonly property string home: Quickshell.env("HOME")
