@@ -21,7 +21,7 @@
 
 ## ✨ Features
 
-- ⛏️ **Pixel Miner (`miner.qml`)**: Real-time T3 Code reactive status module. Swings pickaxe with sparkling crystal vein when AI coding threads are active; stretches/yawns and sleeps peacefully in his minecart with `zzz` when all threads complete. Lists active thread titles on hover! Click anytime to force an instant re-poll.
+- ⛏️ **Pixel Miner (`miner.qml`)**: Real-time T3 Code reactive status module. Swings pickaxe with sparkling crystal vein when AI coding threads are active; stretches/yawns and sleeps peacefully in his minecart with `zzz` when all threads complete. Lists active thread titles on hover! Click anytime to open or focus T3 Code and force an instant re-poll.
 - 🌌 **Starfield (`starfield.qml`)**: Multi-layered parallax pixel stars across the entire bar background with occasional shooting stars. Driven by the wall clock for perfect sync across multi-monitor setups without jumping on shell restarts.
 - ☀️ **Day Sky (`daysky.qml`)**: Light-theme sibling of the starfield. Banded pixel sky with 3 parallax cloud layers, a sun that crosses the bar following the real local time, a golden tint around sunrise and sunset, and occasional bird flocks or a hot-air balloon. It only shows when the active Omarchy theme is light (`mode = "light"` in the theme's `colors.toml`); the starfield hides itself on light themes, so the two swap automatically on theme change.
 - 🎮 **Pixel Scenes (`pixelscenes.qml`)**: Rotating classic pixel art scenes (Kirby inhaling stars, Link vs Octorok, catching Pikachu). Clock-synchronized scene rotation with manual advance on click.
@@ -68,6 +68,7 @@ Options are configured in your `~/.config/omarchy/shell.json` inside each module
 | `pixel` | `2` | Pixel art scaling factor (automatically clamped to bar height). |
 | `pollSeconds` | `4` | Polling interval in seconds to query T3 Code active threads. |
 | `staleMinutes` | `20` | Thread freshness threshold in minutes (older threads treated as zombies). |
+| `clickCommand` | `omarchy-launch-or-focus com.t3tools.T3Code "uwsm-app -- t3code"` | Shell command run on click to open or focus T3 Code. Set to `""` to only re-poll. |
 
 ```json
 {
